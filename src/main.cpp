@@ -36,11 +36,14 @@ int main() {
   PID pid_steering;
   // Kp,   Ki,   Kd,
   //Initialize the PIDs controller
-  std::vector<double> p {0.060,0.0003,1.3};
-  std::vector<double> dp{0.001,0.0001,0.1};
-  pid_steering.Init(0.06,0.0003,1.3);
+  std::vector<double> p {0.06,0.0001,1.3}; //0.060,0.0003,1.3
+  std::vector<double> dp{0.001,0.000001,0.01}; //dp{0.0001,0.00001,0.001};
+  pid_steering.Init(0.06,0.0001,1.3);
+  double best_error = std::numeric_limits<double>::max(); double total_error = 0;
+  int sample = 0; int it_k =0; int iterator = 0;
+  int samples = 50;
 
-  h.onMessage([&pid_steering ](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
+  h.onMessage([&pid_steering, &p, &dp, &best_error, &sample, &samples, &it_k, &iterator, &total_error](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                      uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
@@ -61,45 +64,60 @@ int main() {
           double steer_value;
           double throttle_value;
           /**
-           * TODO: Calculate steering value here, remember the steering value is
+           * Calculate steering value here, remember the steering value is
            *   [-1, 1].
-           * NOTE: Feel free to play around with the throttle and speed.
-           *   Maybe use another PID controller to control the speed!
            */
 
           // Implementing Twiddle for steering controller
 
+          // checking each number of samples after the controller has run
+          if (sample > samples) {
+            switch (iterator) {
+            // check if the cte is smaller than the best error
+            case 0:
+              if ((total_error/samples) <  best_error){
+                best_error = total_error;
+                dp[it_k] *= 1.1;
+              } else {
+                p[it_k] -= 2*dp[it_k];
+                pid_steering.Init(p[0],p[1],p[2]);
+              }
+              iterator += 1;
+              break;
+            case 1:
+              if ((total_error/samples) < best_error){
+                best_error = total_error;
+                dp[it_k] *= 1.1;
+              }else {
+                p[it_k] += dp[it_k];
+                dp[it_k] *=0.9;
+                pid_steering.Init(p[0],p[1],p[2]);
+              }
+              iterator = 0;
+              it_k += 1;
+              if (it_k > 2)
+                it_k =0;
+              break;
+              }
+            total_error = 0;
+            sample = 0 ;
+            std::cout <<" gains kp, ki, kd " << p[0] << " " << p[1] << " " << p[2] << std::endl;
+          }
+          else {
+            sample += 1;
+            total_error += pow(cte,2.0);
+          }
 
           pid_steering.UpdateError(cte);
           steer_value = -pid_steering.TotalError();
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-          //pid_steering.UpdateError(cte);
-          //steer_value = -pid_steering.TotalError() ;
-
-
           // DEBUG
-          std::cout << "CTE: " << cte << " Steering Value: " << steer_value 
+          std::cout << "CTE: " << cte << " Steering Value: " << steer_value
                     << std::endl;
 
           json msgJson;
           msgJson["steering_angle"] = steer_value;
-          msgJson["throttle"] = 0.3 ;//throttle_value; // range [0 - 0.3]
+          msgJson["throttle"] = 0.2 ;//throttle_value; // range [0 - 0.3]
           auto msg = "42[\"steer\"," + msgJson.dump() + "]";
           std::cout << msg << std::endl;
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
@@ -116,7 +134,7 @@ int main() {
     std::cout << "Connected!!!" << std::endl;
   });
 
-  h.onDisconnection([&h](uWS::WebSocket<uWS::SERVER> ws, int code, 
+  h.onDisconnection([&h](uWS::WebSocket<uWS::SERVER> ws, int code,
                          char *message, size_t length) {
     ws.close();
     std::cout << "Disconnected" << std::endl;
@@ -129,6 +147,6 @@ int main() {
     std::cerr << "Failed to listen to port" << std::endl;
     return -1;
   }
-  
+
   h.run();
 }
