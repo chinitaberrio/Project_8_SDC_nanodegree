@@ -4,7 +4,7 @@ Self-Driving Car Engineer Nanodegree Program
 
 ---
 The main objective of this project is to implement a PID controller able to keep on track a simulated vehicle. PID control theory is extensively use in different industries, this case is not an exception. 
-<<<<<<< HEAD
+
 ```
 [![Watch the video](video.gif)]
 ```
@@ -14,17 +14,11 @@ While trying to tune the parameters for the PID controller, I found this informa
 *(D) Derivative error correction. The correction signal opposes rapid deviations in system output, reducing the response to disturbances and transient conditions.
 =======
 
-
-
-
-
-
 While trying to tune the parameters for the PID controller, i found this information quite useful:
 
 * (P) Proportional error correction. The difference between the setpoint and actual system output is amplified and fed back to provide the correction signal. The larger the deviation from the setpoint, the larger the correction signal.
 * (I) Integral error correction. Persistent differences between the setpoint and actual system output accumulate over time, until they become large enough to drive the system output back toward the setpoint.
 * (D) Derivative error correction. The correction signal opposes rapid deviations in system output, reducing the response to disturbances and transient conditions.
->>>>>>> f04ed611f1d76799022ff71ac6050b4ad9ef6f74
 source: http://www.mstarlabs.com/docs/tn031.html
 
 This on-line simulator will give you an idea of the effects of changing each of the ki, kp, kd parameters in a simple process: https://sites.google.com/site/fpgaandco/pid
